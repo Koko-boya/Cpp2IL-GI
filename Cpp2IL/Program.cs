@@ -49,7 +49,6 @@ namespace Cpp2IL
         private static void HandleWindowsGamePath(string gamePath, string? inputExeName, ref Cpp2IlRuntimeArgs args)
         {
             //Windows game.
-            args.PathToAssembly = Path.Combine(gamePath, "GameAssembly.dll");
             var exeName = Path.GetFileNameWithoutExtension(Directory.GetFiles(gamePath)
                 .FirstOrDefault(f => f.EndsWith(".exe") && !BlacklistedExecutableFilenames.Any(f.EndsWith)));
 
@@ -59,7 +58,8 @@ namespace Cpp2IL
                 throw new SoftException("Failed to locate any executable in the provided game directory. Make sure the path is correct, and if you *really* know what you're doing (and know it's not supported), use the force options, documented if you provide --help.");
 
             var unityPlayerPath = Path.Combine(gamePath, $"{exeName}.exe");
-            args.PathToMetadata = Path.Combine(gamePath, $"{exeName}_Data", "il2cpp_data", "Metadata", "global-metadata.dat");
+            args.PathToAssembly = Path.Combine(gamePath, $"{exeName}_Data", "Native", "UserAssembly.dll");
+            args.PathToMetadata = Path.Combine(gamePath, $"{exeName}_Data", "Native", "Data", "Metadata", "global-metadata-unity.dat");
 
             if (!File.Exists(args.PathToAssembly) || !File.Exists(unityPlayerPath) || !File.Exists(args.PathToMetadata))
                 throw new SoftException("Invalid game-path or exe-name specified. Failed to find one of the following:\n" +
@@ -69,7 +69,7 @@ namespace Cpp2IL
 
             Logger.VerboseNewline($"Found probable windows game at path: {gamePath}. Attempting to get unity version...");
             var gameDataPath = Path.Combine(gamePath, $"{exeName}_Data");
-            var uv = Cpp2IlApi.DetermineUnityVersion(unityPlayerPath, gameDataPath);
+            var uv = new[] { 2019, 4, 32 };
             Logger.VerboseNewline($"First-attempt unity version detection gave: {uv?.ToString() ?? "null"}");
 
             if (uv == null)

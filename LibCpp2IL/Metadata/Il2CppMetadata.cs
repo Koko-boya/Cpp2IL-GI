@@ -282,19 +282,14 @@ namespace LibCpp2IL.Metadata
                 metadataUsageDic[i] = new SortedDictionary<uint, uint>();
             }
 
-            foreach (var metadataUsageList in metadataUsageLists)
+            foreach (var metadataUsagePair in metadataUsagePairs)
             {
-                for (var i = 0; i < metadataUsageList.count; i++)
-                {
-                    var offset = metadataUsageList.start + i;
-                    var metadataUsagePair = metadataUsagePairs[offset];
-                    var usage = GetEncodedIndexType(metadataUsagePair.encodedSourceIndex);
-                    var decodedIndex = GetDecodedMethodIndex(metadataUsagePair.encodedSourceIndex);
-                    metadataUsageDic[usage][metadataUsagePair.destinationIndex] = decodedIndex;
-                }
+                var usage = GetEncodedIndexType(metadataUsagePair.encodedSourceIndex);
+                var decodedIndex = GetDecodedMethodIndex(metadataUsagePair.encodedSourceIndex);
+                metadataUsageDic[usage][metadataUsagePair.destinationIndex] = decodedIndex;
             }
 
-            maxMetadataUsages = metadataUsageDic.Max(x => x.Value.Max(y => y.Key)) + 1;
+            maxMetadataUsages = 0;
         }
 
         private uint GetEncodedIndexType(uint index)

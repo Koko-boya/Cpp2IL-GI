@@ -130,6 +130,10 @@ namespace LibCpp2IL
             return global?.AsMethod();
         }
 
+        private static ulong ToULong(byte[] a, int start) {
+            return (ulong)(a[start + 0] | (a[start + 1] << 8) | (a[start + 2] << 16) | (a[start + 3] << 24));
+        }
+
         /// <summary>
         /// Initialize the metadata and PE from a pair of byte arrays.
         /// </summary>
@@ -157,13 +161,30 @@ namespace LibCpp2IL
             LibLogger.InfoNewline("Searching Binary for Required Data...");
             start = DateTime.Now;
 
-            ulong codereg, metareg;
+            ulong codereg = 0, metareg = 0, mhyusages = 0;
             if (BitConverter.ToInt16(binaryBytes, 0) == 0x5A4D)
             {
                 var pe = new PE.PE(new MemoryStream(binaryBytes, 0, binaryBytes.Length, false, true), TheMetadata.maxMetadataUsages);
                 Binary = pe;
 
-                (codereg, metareg) = pe.PlusSearch(TheMetadata.methodDefs.Count(x => x.methodIndex >= 0), TheMetadata.typeDefs.Length);
+                const int patternLength = 29;
+
+                for (int i = 0; i < binaryBytes.Length - patternLength; i += 0x10) {
+                    if (
+                        binaryBytes[i + 0] == 0x4C && binaryBytes[i + 1] == 0x8D && binaryBytes[i + 2] == 0x0D &&
+                        binaryBytes[i + 7] == 0x4C && binaryBytes[i + 8] == 0x8D && binaryBytes[i + 9] == 0x05 &&
+                        binaryBytes[i + 14] == 0x48 && binaryBytes[i + 15] == 0x8D && binaryBytes[i + 16] == 0x15 &&
+                        binaryBytes[i + 21] == 0x48 && binaryBytes[i + 22] == 0x8D && binaryBytes[i + 23] == 0x0D &&
+                        binaryBytes[i + 28] == 0xE9
+                    ) {
+                        ulong bas = pe.peImageBase + 3072;
+
+                        codereg = (ulong)i + 28 + ToULong(binaryBytes, i + 21 + 3) + bas;
+                        metareg = (ulong)i + 21 + ToULong(binaryBytes, i + 14 + 3) + bas;
+                        mhyusages = (ulong)i + 14 + ToULong(binaryBytes, i + 7 + 3) + bas;
+                        break;
+                    }
+                }
             } else if (BitConverter.ToInt32(binaryBytes, 0) == 0x464c457f)
             {
                 var elf = new ElfFile(new MemoryStream(binaryBytes, 0, binaryBytes.Length, true, true), TheMetadata.maxMetadataUsages);
@@ -192,14 +213,14 @@ namespace LibCpp2IL
                 throw new Exception("Unknown binary type");
             }
             
-            if (codereg == 0 || metareg == 0)
-                throw new Exception("Failed to find Binary code or metadata registration");
+            if (codereg == 0 || metareg == 0 || mhyusages == 0)
+                throw new Exception("Failed to find Binary code or metadata registration, or mihoyo usages");
                 
-            LibLogger.InfoNewline($"Got Binary codereg: 0x{codereg:X}, metareg: 0x{metareg:X} in {(DateTime.Now - start).TotalMilliseconds:F0}ms.");
+            LibLogger.InfoNewline($"Got Binary codereg: 0x{codereg:X}, metareg: 0x{metareg:X}, mhyusages: 0x{mhyusages:X} in {(DateTime.Now - start).TotalMilliseconds:F0}ms.");
             LibLogger.InfoNewline("Initializing Binary...");
             start = DateTime.Now;
                 
-            Binary.Init(codereg, metareg);
+            Binary.Init(codereg, metareg, mhyusages);
             
             LibLogger.InfoNewline($"Initialized Binary in {(DateTime.Now - start).TotalMilliseconds:F0}ms");
 

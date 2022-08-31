@@ -19,6 +19,7 @@ namespace LibCpp2IL
         protected readonly long maxMetadataUsages;
         private Il2CppMetadataRegistration metadataRegistration;
         private Il2CppCodeRegistration codeRegistration;
+        public Il2CppMihoyoUsages MihoyoUsages;
         protected ulong[] methodPointers;
         private ulong[] genericMethodPointers;
         private ulong[] invokerPointers;
@@ -47,10 +48,11 @@ namespace LibCpp2IL
         public abstract long RawLength { get; }
         public int NumTypes => types.Length;
 
-        public void Init(ulong pCodeRegistration, ulong pMetadataRegistration)
+        public void Init(ulong pCodeRegistration, ulong pMetadataRegistration, ulong pMihoyoUsages)
         {
             codeRegistration = ReadClassAtVirtualAddress<Il2CppCodeRegistration>(pCodeRegistration);
             metadataRegistration = ReadClassAtVirtualAddress<Il2CppMetadataRegistration>(pMetadataRegistration);
+            MihoyoUsages = ReadClassAtVirtualAddress<Il2CppMihoyoUsages>(pMihoyoUsages);
 
             LibLogger.Verbose("\tReading generic instances...");
             var start = DateTime.Now;
