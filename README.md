@@ -8,8 +8,6 @@ Due to, well, very much forseen circumstances, we are in the process of rewritin
 
 As such, bug fixes, and new updates, are likely to be sparse until the work is done, which ~~I expect to be sometime in January 2022~~ will be when it will be, basically.
 
-### Need Help? Join [the discord](https://discord.gg/XdggT7XZXm)!
-
 WIP Tool to reverse Unity's IL2CPP build process back to the original managed DLLs.
 
 The information below almost entirely applies to the CLI application available on github releases. For documentation on
